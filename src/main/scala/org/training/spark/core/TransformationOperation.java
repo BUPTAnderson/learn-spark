@@ -1,5 +1,6 @@
 package org.training.spark.core;
 
+import org.apache.spark.Partitioner;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -11,9 +12,11 @@ import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.api.java.function.VoidFunction;
 import scala.Tuple2;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
 import java.util.function.Consumer;
 
 /**
@@ -248,6 +251,425 @@ public class TransformationOperation
             }
         });
     }
+
+    public static void join() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("join");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Tuple2<Integer, String>> listname = Arrays.asList(
+                new Tuple2<Integer, String>(1, "张三"),
+                new Tuple2<Integer, String>(2, "李四"),
+                new Tuple2<Integer, String>(3, "王五"),
+                new Tuple2<Integer, String>(4, "马六"),
+                new Tuple2<Integer, String>(5, "田七"),
+                new Tuple2<Integer, String>(6, "朱八"),
+                new Tuple2<Integer, String>(7, "赵九"),
+                new Tuple2<Integer, String>(8, "赵九"));
+        List<Tuple2<Integer, Integer>> listscore = Arrays.asList(
+                new Tuple2<Integer, Integer>(1, 100),
+                new Tuple2<Integer, Integer>(2, 90),
+                new Tuple2<Integer, Integer>(3, 80),
+                new Tuple2<Integer, Integer>(6, 70),
+                new Tuple2<Integer, Integer>(4, 95),
+                new Tuple2<Integer, Integer>(5, 98),
+                new Tuple2<Integer, Integer>(8, 68),
+                new Tuple2<Integer, Integer>(7, 70));
+        JavaPairRDD<Integer, String> listnameRDD = sc.parallelizePairs(listname);
+        JavaPairRDD<Integer, Integer> listscoreRDD = sc.parallelizePairs(listscore);
+        JavaPairRDD<Integer, Tuple2<String, Integer>> join = listnameRDD.join(listscoreRDD);
+        join.foreach(new VoidFunction<Tuple2<Integer, Tuple2<String, Integer>>>() {
+            @Override
+            public void call(Tuple2<Integer, Tuple2<String, Integer>> integerTuple2Tuple2)
+                    throws Exception
+            {
+                System.out.print("学号:" + integerTuple2Tuple2._1);
+                System.out.print(", 姓名:" + integerTuple2Tuple2._2._1);
+                System.out.println(", 分数:" + integerTuple2Tuple2._2._2);
+            }
+        });
+    }
+
+    /**
+     * Cogroup:这个实现根据两个要进行合并的两个RDD操作,生成一个CoGroupedRDD的实例,这个RDD的返回结果是把相同的key中两个RDD分别进行合并操作,
+     * 最后返回的RDD的value是一个Pair的实例,这个实例包含两个Iterable的值,第一个值表示的是RDD1中相同KEY的值,第二个值表示的是RDD2中相同key的值.
+     */
+    public static void cogroup() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("cogroup");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Tuple2<Integer, String>> listname = Arrays.asList(
+                // <班级, 姓名>
+                new Tuple2<Integer, String>(1, "张三"),
+                new Tuple2<Integer, String>(2, "李四"),
+                new Tuple2<Integer, String>(3, "王五"),
+                new Tuple2<Integer, String>(4, "马六"),
+                new Tuple2<Integer, String>(1, "田七"),
+                new Tuple2<Integer, String>(2, "朱八"),
+                new Tuple2<Integer, String>(3, "赵九"),
+                new Tuple2<Integer, String>(4, "赵九"));
+        List<Tuple2<Integer, Integer>> listscore = Arrays.asList(
+                // <班级, 男生or女生人数>
+                new Tuple2<Integer, Integer>(1, 30),
+                new Tuple2<Integer, Integer>(2, 22),
+                new Tuple2<Integer, Integer>(3, 23),
+                new Tuple2<Integer, Integer>(6, 33),
+                new Tuple2<Integer, Integer>(4, 30),
+                new Tuple2<Integer, Integer>(1, 21),
+                new Tuple2<Integer, Integer>(2, 18),
+                new Tuple2<Integer, Integer>(3, 31),
+                new Tuple2<Integer, Integer>(4, 30));
+        JavaPairRDD<Integer, String> listnameRDD = sc.parallelizePairs(listname);
+        JavaPairRDD<Integer, Integer> listscoreRDD = sc.parallelizePairs(listscore);
+        JavaPairRDD<Integer, Tuple2<Iterable<String>, Iterable<Integer>>> cogroup = listnameRDD.cogroup(listscoreRDD);
+        cogroup.foreach(new VoidFunction<Tuple2<Integer, Tuple2<Iterable<String>, Iterable<Integer>>>>() {
+            @Override
+            public void call(Tuple2<Integer, Tuple2<Iterable<String>, Iterable<Integer>>> integerTuple2Tuple2)
+                    throws Exception
+            {
+                System.out.print("班级:" + integerTuple2Tuple2._1 + ", 班长:");
+                integerTuple2Tuple2._2._1.forEach(new Consumer<String>() {
+                    @Override
+                    public void accept(String s)
+                    {
+                        System.out.print(" " + s);
+                    }
+                });
+                System.out.print(" 男女生人数:");
+                integerTuple2Tuple2._2._2.forEach(new Consumer<Integer>() {
+                    @Override
+                    public void accept(Integer integer)
+                    {
+                        System.out.print(" " + integer);
+                    }
+                });
+                System.out.println();
+            }
+        });
+    }
+
+    /**
+     * 求rdd并集, 但是不去重
+     */
+    public static void union() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("union");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Integer> lista = Arrays.asList(1, 2, 3, 4);
+        List<Integer> listb = Arrays.asList(3, 2, 3, 9);
+        JavaRDD<Integer> listaRDD = sc.parallelize(lista);
+        JavaRDD<Integer> listbRDD = sc.parallelize(listb);
+        JavaRDD<Integer> union = listaRDD.union(listbRDD);
+        union.foreach(new VoidFunction<Integer>() {
+            @Override
+            public void call(Integer integer)
+                    throws Exception
+            {
+                System.out.println(integer);
+            }
+        });
+    }
+
+    /**
+     * 求两个RDD的交集
+     */
+    public static void intersection() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("intersection");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Integer> lista = Arrays.asList(1, 2, 3, 4);
+        List<Integer> listb = Arrays.asList(3, 2, 3, 9);
+        JavaRDD<Integer> listaRDD = sc.parallelize(lista);
+        JavaRDD<Integer> listbRDD = sc.parallelize(listb);
+        listaRDD.intersection(listbRDD).foreach(new VoidFunction<Integer>() {
+            @Override
+            public void call(Integer integer)
+                    throws Exception
+            {
+                System.out.println(integer);
+            }
+        });
+    }
+
+    /**
+     * 去重
+     */
+    public static void distinct() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("distinct");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Integer> list = Arrays.asList(1, 2, 3, 4, 3, 2, 5, 9);
+        JavaRDD<Integer> listRDD = sc.parallelize(list);
+        listRDD.distinct().foreach(new VoidFunction<Integer>() {
+            @Override
+            public void call(Integer integer)
+                    throws Exception
+            {
+                System.out.println(integer);
+            }
+        });
+    }
+
+    /**
+     * 求两个RDD的笛卡尔积
+     */
+    public static void cartesian() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("cartesian");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Integer> lista = Arrays.asList(1, 2, 3, 4);
+        List<String> listb = Arrays.asList("a", "b", "c", "d");
+        JavaRDD<Integer> listaRDD = sc.parallelize(lista);
+        JavaRDD<String> listbRDD = sc.parallelize(listb);
+        listaRDD.cartesian(listbRDD).foreach(new VoidFunction<Tuple2<Integer, String>>() {
+            @Override
+            public void call(Tuple2<Integer, String> integerStringTuple2)
+                    throws Exception
+            {
+                System.out.println(integerStringTuple2._1 + ", " + integerStringTuple2._2);
+            }
+        });
+    }
+
+    public static void mapPartitions() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("mapPartitions");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6);
+        // 强制指定分区数为2, 默认是1个分区
+        JavaRDD<Integer> listRDD = sc.parallelize(list, 2);
+        listRDD.mapPartitions(new FlatMapFunction<Iterator<Integer>, String>() {
+            /**
+             * 这里每次处理的就是一个分区的数
+             * @param integerIterator
+             * @return
+             * @throws Exception
+             */
+            @Override
+            public Iterator<String> call(Iterator<Integer> integerIterator)
+                    throws Exception
+            {
+                System.out.println("---------------------------");
+                ArrayList<String> list = new ArrayList<String>();
+                while (integerIterator.hasNext()) {
+                    Integer i  = integerIterator.next();
+                    list.add("hello " + i);
+                }
+                return list.iterator();
+            }
+        }).foreach(new VoidFunction<String>() {
+            @Override
+            public void call(String s)
+                    throws Exception
+            {
+                System.out.println(s);
+            }
+        });
+    }
+
+    /**
+     * filter过滤之后 --> partition数据量会减少
+     * 100 partition task
+     * 100 -> 50 partition task
+     *
+     * 这一个repartition分区, 会进行shuffle操作
+     */
+    public static void repartition() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("repartition");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6);
+        JavaRDD<Integer> listRDD = sc.parallelize(list);
+        listRDD.repartition(2).foreach(new VoidFunction<Integer>() {
+            @Override
+            public void call(Integer integer)
+                    throws Exception
+            {
+                System.out.println(integer);
+            }
+        });
+    }
+
+    /**
+     * repartition起始只是coalesce的shuffle为true的建议的实现, repartiton的shuffle默认是true
+     */
+    public static void coalesce() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("coalesce");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6);
+        // 默认一个分区
+        JavaRDD<Integer> listRDD = sc.parallelize(list);
+
+        /**
+         * numPartitons 重新分成几个区, 这里重新分区成2个分区
+         * shuffle 是否进行shuffle
+         */
+        listRDD.coalesce(2, true);
+        /**
+         如果原来有N个partition，需要重新规划成M个partition
+          1）N < M  需要将shuffle设置为true。
+          2）N > M 相差不多，N=1000 M=100  建议 shuffle=false 。
+          父RDD和子RDD是窄依赖
+          3）N >> M  比如 n=100 m=1  建议shuffle设置为true，这样性能更好。
+         */
+    }
+
+    /**
+     * 随机采样
+     */
+    public static void sample() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("sample");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        JavaRDD<Integer> listRDD = sc.parallelize(list);
+        /**
+         * 第一个参数withReplacement是true表示有放回取样, false表示无放回.
+         * 第二个参数表示比例, 这个比例不是精确的, 比如这里是0.2, 可能打印出2个或3个甚至4个数
+         */
+        listRDD.sample(true, 0.2).foreach(new VoidFunction<Integer>() {
+            @Override
+            public void call(Integer integer)
+                    throws Exception
+            {
+                System.out.println("------------------------------" + integer);
+            }
+        });
+    }
+
+    /**
+     * 做一个单词计数的例子
+     */
+    public static void aggregateByKey() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("aggregateByKey");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<String> list = Arrays.asList("hello,world", "hello,spark");
+        JavaRDD<String> listRDD = sc.parallelize(list);
+        listRDD.flatMap(new FlatMapFunction<String, String>() {
+            @Override
+            public Iterator<String> call(String s)
+                    throws Exception
+            {
+                return Arrays.asList(s.split(",")).iterator();
+            }
+        }).mapToPair(new PairFunction<String, String, Integer>() {
+            @Override
+            public Tuple2<String, Integer> call(String s)
+                    throws Exception
+            {
+                return new Tuple2<String, Integer>(s, 1);
+            }
+        })
+        /**
+         * 其实reduceByKey就是aggregateByKey的简化版, 就是aggregateByKey多提供了一个函数(第二个参数),
+         * 类似于MapReduce的combine操作(就在map端执行reduce的操作)
+         * 第一个参数代表的是每个key的初始值
+         * 第二个参数是一个函数, 类似于map-side的本地聚合
+         * 第三个参数也是一个函数类似于reduce全局聚合
+         */
+        .aggregateByKey(0, new Function2<Integer, Integer, Integer>()
+        {
+            @Override
+            public Integer call(Integer integer, Integer integer2)
+                    throws Exception
+            {
+                return integer + integer2;
+            }
+        }, new Function2<Integer, Integer, Integer>() {
+            @Override
+            public Integer call(Integer integer, Integer integer2)
+                    throws Exception
+            {
+                return integer + integer2;
+            }
+        });
+
+    }
+
+    public static void mapPartitionsWithIndex() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("mapPartitionsWithIndex");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+        JavaRDD<Integer> listRDD = sc.parallelize(list, 2);
+        // 第二个参数代表是否返回partition的下标, true表示返回
+        listRDD.mapPartitionsWithIndex(new Function2<Integer, Iterator<Integer>, Iterator<String>>() {
+            // 第一个参数index是分区的索引
+            @Override
+            public Iterator<String> call(Integer index, Iterator<Integer> iterator)
+                    throws Exception
+            {
+                ArrayList<String> list1 = new ArrayList<String>();
+                while (iterator.hasNext()) {
+                    String result = iterator.next() + "_" + index;
+                    list1.add(result);
+                }
+                return list1.iterator();
+            }
+        }, true)
+        .foreach(new VoidFunction<String>() {
+            @Override
+            public void call(String s)
+                    throws Exception
+            {
+                System.out.println(s);
+            }
+        });
+    }
+
+    public static void repartitionAndSortWithinPartitions() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("repartitionAndSortWithinPartitions");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Integer> list = Arrays.asList(11, 12, 13, 14, 15, 16, 17, 18, 19, 20);
+        JavaRDD<Integer> listRDD = sc.parallelize(list);
+        Random random = new Random();
+        JavaPairRDD<Integer, Integer> mapToPair = listRDD.mapToPair(new PairFunction<Integer, Integer, Integer>() {
+            @Override
+            public Tuple2<Integer, Integer> call(Integer i)
+                    throws Exception
+            {
+                return new Tuple2<Integer, Integer>(i, random.nextInt(10));
+            }
+        });
+        JavaPairRDD<Integer, Integer> repartitionAndSortWithinPartitions = mapToPair.repartitionAndSortWithinPartitions(new Partitioner() {
+            // 要分为几个分区
+            @Override
+            public int numPartitions()
+            {
+                return 2;
+            }
+
+            @Override
+            public int getPartition(Object key)
+            {
+                return key.toString().hashCode() % 2;
+            }
+        });
+        repartitionAndSortWithinPartitions.foreach(new VoidFunction<Tuple2<Integer, Integer>>() {
+            @Override
+            public void call(Tuple2<Integer, Integer> integerIntegerTuple2)
+                    throws Exception
+            {
+                System.out.println(integerIntegerTuple2._1 + ": " + integerIntegerTuple2._2);
+            }
+        });
+    }
+
     public static void main(String[] args)
     {
         // Transformations操作
@@ -256,6 +678,17 @@ public class TransformationOperation
 //        flatMap();
 //        grouByKey();
 //        redueceByKey();
-        sortByKey();
+//        sortByKey();
+//        join();
+//        cogroup();
+//        union();
+//        intersection();
+//        distinct();
+//        cartesian();
+//        mapPartitions();
+//        repartition();
+//        sample();
+//        mapPartitionsWithIndex();
+        repartitionAndSortWithinPartitions();
     }
 }
