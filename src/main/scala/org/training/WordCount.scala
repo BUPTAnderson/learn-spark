@@ -2,6 +2,7 @@ package org.training
 
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
+import org.apache.spark.storage.StorageLevel
 
 /**
   * Created by anderson on 17-9-5.
@@ -44,8 +45,12 @@ object WordCount {
     val conf = new SparkConf().setAppName("WordCont")
     val sc = new SparkContext(conf)
 //    sc.textFile("hdfs://ns1/spark/abc.txt")
-    sc.textFile("hdfs://anderson-JD:9000/spark/abc.txt")
-      .flatMap(line => line.split("\t"))
+    val file = sc.textFile("hdfs://anderson-JD:9000/spark/abc.txt")
+
+    val fileRDD = file.cache()// 把RDD数据持久化到内存, 相当于MEMORY_ONLY
+    file.persist(StorageLevel.MEMORY_ONLY)
+
+    file.flatMap(line => line.split("\t"))
       .map(word => (word, 1))
       .reduceByKey(_ + _)
       .saveAsTextFile("hdfs://anderson-JD:9000/spark/result")

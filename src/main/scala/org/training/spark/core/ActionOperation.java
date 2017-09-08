@@ -1,12 +1,15 @@
 package org.training.spark.core;
 
 import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function2;
+import scala.Tuple2;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by anderson on 17-9-7.
@@ -96,16 +99,56 @@ public class ActionOperation
         JavaRDD<Integer> listaRDD = sc.parallelize(lista);
         JavaRDD<Integer> listbRDD = sc.parallelize(listb);
         JavaRDD<Integer> union = listaRDD.union(listbRDD);
-        // 报存到一个目录下面
-        union.saveAsTextFile("/tmp/union");
+        // 保存到一个目录下面
+        union.repartition(1).saveAsTextFile("/tmp/union");
     }
+
+    public static void countByKey() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("countByKey");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Tuple2<String, Integer>> list = Arrays.asList(
+                new Tuple2<String, Integer>("张三", 90),
+                new Tuple2<String, Integer>("李四", 100),
+                new Tuple2<String, Integer>("张三", 90),
+                new Tuple2<String, Integer>("李四", 100),
+                new Tuple2<String, Integer>("张三", 90),
+                new Tuple2<String, Integer>("李四", 70),
+                new Tuple2<String, Integer>("王五", 60),
+                new Tuple2<String, Integer>("王五", 90),
+                new Tuple2<String, Integer>("王五", 100));
+        JavaPairRDD<String, Integer> listRDD = sc.parallelizePairs(list);
+        Map<String, Long> countByKey = listRDD.countByKey();
+        for (String key : countByKey.keySet()) {
+            System.out.println(key + ": " + countByKey.get(key));
+        }
+    }
+
+    public static void takeSample() {
+        SparkConf conf = new SparkConf();
+        conf.setMaster("local");
+        conf.setAppName("takeSample");
+        JavaSparkContext sc = new JavaSparkContext(conf);
+        List<Integer> list = Arrays.asList(1, 222, 3, 40, 500, 6, 71, 18, 9, 100);
+        JavaRDD<Integer> listRDD = sc.parallelize(list);
+        // 第一个参数是是否放回, 第二个参数是取几个数
+        List<Integer> takeSample = listRDD.takeSample(true, 2);
+        for (Integer sample : takeSample) {
+            System.out.println(sample);
+        }
+    }
+
     public static void main(String[] args)
     {
+        // foreach
 //        reduce();
 //        collect();
 //        take();
 //        count();
 //        takeOrdered();
-        saveAsTextFile();
+//        saveAsTextFile();
+//        countByKey();
+        takeSample();
     }
 }

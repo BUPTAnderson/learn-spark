@@ -265,7 +265,7 @@ public class TransformationOperation
                 new Tuple2<Integer, String>(5, "田七"),
                 new Tuple2<Integer, String>(6, "朱八"),
                 new Tuple2<Integer, String>(7, "赵九"),
-                new Tuple2<Integer, String>(8, "赵九"));
+                new Tuple2<Integer, String>(8, "钱十"));
         List<Tuple2<Integer, Integer>> listscore = Arrays.asList(
                 new Tuple2<Integer, Integer>(1, 100),
                 new Tuple2<Integer, Integer>(2, 90),
