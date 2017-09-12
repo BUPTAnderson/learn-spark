@@ -92,7 +92,7 @@ public class ActionOperation
     public static void saveAsTextFile() {
         SparkConf conf = new SparkConf();
         conf.setMaster("local");
-        conf.setAppName("saveAsTextFile");
+//        conf.setAppName("saveAsTextFile");
         JavaSparkContext sc = new JavaSparkContext(conf);
         List<Integer> lista = Arrays.asList(1, 2, 3, 4);
         List<Integer> listb = Arrays.asList(3, 2, 3, 9);
@@ -100,7 +100,7 @@ public class ActionOperation
         JavaRDD<Integer> listbRDD = sc.parallelize(listb);
         JavaRDD<Integer> union = listaRDD.union(listbRDD);
         // 保存到一个目录下面
-        union.repartition(1).saveAsTextFile("/tmp/union");
+        union.repartition(1).saveAsTextFile("/union");
     }
 
     public static void countByKey() {
