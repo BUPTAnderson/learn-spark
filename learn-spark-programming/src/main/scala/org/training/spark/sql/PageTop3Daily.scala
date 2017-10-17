@@ -13,6 +13,7 @@ import scala.collection.mutable
 
 /**
   * Created by anderson on 17-10-16.
+  * 需要启动HiveMetaStore服务
   */
 object PageTop3Daily {
   def main(args: Array[String]): Unit = {
@@ -161,6 +162,7 @@ object PageTop3Daily {
     println("========================================")
     val top3dailyDF = spark.createDataFrame(rowresultRDD, schema)
     top3Daily.show()
+    // 没有指定数据库的话, 默认是default数据库
     top3Daily.write.saveAsTable("daily_top3")
   }
 }

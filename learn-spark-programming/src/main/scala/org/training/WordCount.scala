@@ -6,8 +6,8 @@ import org.apache.spark.storage.StorageLevel
 
 /**
   * Created by anderson on 17-9-5.
-standalone cluster模式
-$ cat wordcount.sh
+  * standalone cluster模式
+  *$ cat wordcount.sh
 /home/anderson/GitHub/spark-2.2.0-bin-hadoop2.6/bin/spark-submit \
   --class org.training.WordCount \
   --master spark://anderson-JD:7077 \
@@ -15,17 +15,18 @@ $ cat wordcount.sh
   --supervise \
   --executor-memory 512M \
   --total-executor-cores 2 \
-  /home/anderson/gitJD/sparkcore/wordcount.jar \
-
-standalone  client模式(打印信息比较丰富, 适合测试, 成功后可以直接通过cluster模式运行)
-  $ cat wordcount-client.sh
+  /home/anderson/gitJD/sparkcore/wordcount.jar
+ **
+ standalone  client模式(打印信息比较丰富, 适合测试, 成功后可以直接通过cluster模式运行)
+  *$ cat wordcount-client.sh
 /home/anderson/GitHub/spark-2.2.0-bin-hadoop2.6/bin/spark-submit \
   --class org.training.WordCount \
   --master spark://anderson-JD:7077 \
   --driver-memory 512M \
   --executor-memory 512M \
   --total-executor-cores 1 \
-  /home/anderson/gitJD/sparkcore/wordcount.jar \
+  /home/anderson/gitJD/sparkcore/wordcount.jar
+
   */
 object WordCount {
   def main(args: Array[String]): Unit = {
