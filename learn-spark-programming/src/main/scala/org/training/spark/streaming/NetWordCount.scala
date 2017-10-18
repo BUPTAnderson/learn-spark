@@ -6,10 +6,9 @@ import org.apache.spark.streaming.StreamingContext
 
 /**
   * Created by anderson on 17-10-17.
-  * 1.需要启动dfs服务
-  * 2. 需要启动spark服务, start-all.sh
-  * 3. cp learn-spark-programming-1.0-SNAPSHOT.jar networdcount.jar
-  * 4. 编写启动脚本:
+  * 1.需要启动dfs服务, 由于是local模式, 不需要启动spark 服务(不需要启动 start-all.sh)
+  * 2. cp learn-spark-programming-1.0-SNAPSHOT.jar networdcount.jar
+  * 3. 编写启动脚本:
 cat networdcount.sh
 /home/anderson/GitHub/spark-2.2.0-bin-hadoop2.6/bin/spark-submit \
   --class org.training.spark.streaming.NetWordCount \
@@ -19,9 +18,9 @@ cat networdcount.sh
   --total-executor-cores 2 \
   /home/anderson/gitJD/sparkstreaming/networdcount.jar
 
-  * 5. 在一个终端使用: nc -lp 9999, 来发送命令, 如果使用(nc -lk 9999, 会报Error connecting to localhost:9999 - java.net.ConnectException: Connection refused)
-  * 6. 启动: ./networdcount.sh
-  * 7. 在nc窗口发送数据即可, 比如: hadoop  hadoop(注意\t分割, 因为程序中是使用的\t来处理的)
+  * 4. 在一个终端使用: nc -lp 9999, 来发送命令, 如果使用(nc -lk 9999, 会报Error connecting to localhost:9999 - java.net.ConnectException: Connection refused)
+  * 5. 启动: ./networdcount.sh
+  * 6. 在nc窗口发送数据即可, 比如: hadoop  hadoop(注意\t分割, 因为程序中是使用的\t来处理的)
   */
 object NetWordCount {
   def main(args: Array[String]): Unit = {
