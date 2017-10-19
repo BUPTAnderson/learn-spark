@@ -29,7 +29,7 @@ object NetWordCountUpdateStateByKey {
       * 默认情况下是一个工作线程, 那么作为sparkstreaming 我们至少要开启两个线程,
       * 其中一个线程用来接收数据, 这样另一个线程用来处理数据.
       */
-    val conf = new SparkConf().setMaster("local[2]").setAppName("NetWordCount")
+    val conf = new SparkConf().setMaster("local[2]").setAppName("NetWordCountUpdateStateByKey")
 
     /**
       * Seconds 指的是每次处理数据的时间范围(batch interval)
@@ -42,7 +42,7 @@ object NetWordCountUpdateStateByKey {
       * !!! 需要设置一个checkpoint的目录
       * 因为我们的计算结果有中间状态，这些中间状态需要存储
       */
-    ssc.checkpoint(".")
+    ssc.checkpoint("./netword")
     val wordDS = fileDS.flatMap(line => line.split("\t"))
       .map(word => (word, 1))
 
