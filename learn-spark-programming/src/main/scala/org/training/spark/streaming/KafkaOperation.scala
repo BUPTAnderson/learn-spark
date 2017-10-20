@@ -17,7 +17,7 @@ import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
   * 3. 终端输出结果
   *
   * II.
-  * 1. 启动spark集群
+  * 1. 启动hdfs, start-dfs.sh ; 启动spark集群: start-all.sh
   * 2. (由于依赖其它jar, 打依赖包)cp /home/anderson/GitHub/learn-spark/learn-spark-programming/target/learn-spark-programming-1.0-SNAPSHOT-jar-with-dependencies.jar kafka.jar
   * 3. 编写启动脚本
 cat kafka.sh
