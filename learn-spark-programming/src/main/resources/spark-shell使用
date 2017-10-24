@@ -1,0 +1,13 @@
+spark-shell的日志级别是在$SPARK_HOME/conf 中的log4j.properties.template中的log4j.logger.org.apache.spark.repl.Main=WARN来设置的
+也可以在spark-shell的窗口中通过命令: sc.setLogLevel("INFO")进行设置
+
+spark-shell中读取文件:
+val df = spark.read.json("examples/src/main/resources/people.json")
+这种情况下默认是读取的hdfs上面的文件:hdfs://anderson-JD:9000/user/anderson/examples/src/main/resources/people.json
+如果要读取本地文件:
+val df = spark.read.json("file:///home/anderson/GitHub/spark-2.2.0-bin-hadoop2.6/examples/src/main/resources/people.json")
+
+帮助信息:
+:help
+退出:
+:quit
